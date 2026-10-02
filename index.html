@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Face Filter with PictoBlox | Interactive Lesson</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        brand: {
+          purple: "#5E48C4",
+          purpleDark: "#4A3AAD",
+          purpleMid: "#7B6ED4",
+          purplePale: "#EAE7FE",
+          purpleGhost: "#F5F4FF",
+          yellow: "#FFD071",
+          yellowDark: "#E6B84A",
+          yellowPale: "#FFF3CC",
+          cyan: "#59E4FB",
+          black: "#17171B",
+          greyDark: "#4B5563"
+        }
+      },
+      boxShadow: { soft: "0 18px 45px rgba(74,58,173,.13)" }
+    }
+  }
+}
+</script>
+<style>
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: linear-gradient(135deg, #F5F4FF, #FFF9E8);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
+  color: #17171B;
+}
+.slide { display: none; animation: fade .35s ease; }
+.slide.active { display: flex; }
+@keyframes fade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+button { cursor: pointer; }
+.btn { transition: transform .2s, box-shadow .2s; }
+.btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(74,58,173,.18); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Emoji Stage Setup */
+.stage {
+  position: relative;
+  width: min(420px, 100%);
+  height: 320px;
+  border-radius: 28px;
+  background: linear-gradient(160deg, #dffaff, #f5f4ff);
+  overflow: hidden;
+  border: 4px solid #eae7fe;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.emoji-face {
+  font-size: 150px;
+  line-height: 1;
+  user-select: none;
+  position: relative;
+  display: inline-block;
+}
+
+/* PictoBlox Red Blocks Styling */
+.picto-block {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 8px 16px;
+  border-radius: 12px;
+  color: white;
+  font-weight: 800;
+  font-size: 14px;
+  box-shadow: inset 0 -4px 0 rgba(0,0,0,.22), 0 4px 10px rgba(0,0,0,.08);
+  position: relative;
+  user-select: none;
+}
+.picto-block select {
+  background: #ffffff;
+  color: #D94A4A;
+  border: none;
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-weight: 900;
+  font-size: 13px;
+  outline: none;
+  cursor: pointer;
+}
+.red-block { background: #E54545; }
+.control-block { background: #FFAB19; color: #17171B; }
+.event-block { background: #FFBF00; color: #17171B; }
+.looks-block { background: #9966FF; color: white; }
+
+.quiz-option { transition: all .2s ease; }
+.correct { background: #DCFCE7 !important; border-color: #22C55E !important; color: #15803D !important; }
+.wrong { background: #FEE2E2 !important; border-color: #EF4444 !important; color: #B91C1C !important; }
+
+.confetti { position: fixed; inset: 0; pointer-events: none; z-index: 50; }
+.confetti i { position: absolute; width: 10px; height: 16px; border-radius: 2px; animation: fall 2.5s linear forwards; }
+@keyframes fall { 0% { transform: translateY(-20px) rotate(0); } 100% { transform: translateY(105vh) rotate(720deg); } }
+.progress { transition: width .3s ease; }
+</style>
+</head>
+
+<body class="min-h-screen flex flex-col">
+<header class="sticky top-0 z-40 bg-brand-purpleDark text-white shadow-lg">
+  <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+    <div class="flex items-center gap-3">
+      <div class="font-extrabold text-lg md:text-xl flex items-center gap-2">🤖 PictoBlox Lab</div>
+      <div class="hidden md:block text-brand-yellow font-bold text-sm">• Face Filter Interactive Lesson</div>
+    </div>
+    <div class="flex items-center gap-2">
+      <select id="slideSelect" onchange="go(Number(this.value))" class="bg-brand-purple border border-brand-purpleMid rounded-xl px-3 py-1.5 text-xs md:text-sm font-bold outline-none cursor-pointer"></select>
+      <span id="counter" class="bg-brand-purple px-3 py-1.5 rounded-xl text-brand-yellow font-extrabold text-xs md:text-sm">1 / 11</span>
+    </div>
+  </div>
+  <div class="h-1.5 bg-brand-purple"><div id="progress" class="progress h-full bg-brand-yellow" style="width: 9%"></div></div>
+</header>
+
+<main class="flex-1 flex items-center justify-center p-3 md:p-6">
+<div class="w-full max-w-5xl">
+
+<!-- SLIDE 1: Welcome / Home Page -->
+<section class="slide active flex-col bg-white rounded-3xl p-6 md:p-10 shadow-soft border-4 border-brand-purplePale" data-title="Home Page">
+  <div class="grid lg:grid-cols-2 gap-8 items-center">
+    <div>
+      <span class="inline-block bg-brand-purplePale text-brand-purple font-extrabold text-xs tracking-widest uppercase px-5 py-2 rounded-full">Interactive AI & Coding Lesson</span>
+      <h1 class="text-3xl md:text-5xl font-extrabold leading-tight mt-4">Build a <span class="text-brand-purple">Face Filter!</span></h1>
+     
+      
+      <div class="mt-6 flex flex-wrap gap-3">
+        <button onclick="toggleHomeOverlay('glasses')" class="btn bg-brand-purpleGhost border-2 border-brand-purplePale hover:border-brand-purple px-4 py-2.5 rounded-xl text-sm font-extrabold flex items-center gap-2">
+          <span>🕶️ Toggle Glasses</span>
+        </button>
+        <button onclick="toggleHomeOverlay('crown')" class="btn bg-brand-purpleGhost border-2 border-brand-purplePale hover:border-brand-purple px-4 py-2.5 rounded-xl text-sm font-extrabold flex items-center gap-2">
+          <span>👑 Toggle Crown</span>
+        </button>
+      </div>
+    </div>
+    
+    <div class="flex justify-center">
+      <div class="stage">
+        <div class="relative inline-block text-center">
+          <!-- Crown Overlay (Top of head) -->
+          <div id="homeCrown" class="absolute -top-12 left-1/2 -translate-x-1/2 text-6xl transition-all duration-300 opacity-100 z-10">👑</div>
+          <!-- Emoji Base -->
+          <div class="emoji-face">😊</div>
+          <!-- Glasses Overlay (On eyes) -->
+          <div id="homeGlasses" class="absolute top-[32px] left-1/2 -translate-x-1/2 text-6xl transition-all duration-300 opacity-100 z-20">🕶️</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Standard Nav Buttons -->
+  <div class="mt-8 flex justify-between border-t border-gray-100 pt-5">
+    <button onclick="prevSlide()" class="nav-prev btn bg-gray-100 text-gray-700 px-6 py-2.5 rounded-xl font-extrabold">Back</button>
+    <button onclick="nextSlide()" class="nav-next btn bg-brand-purple text-white px-8 py-2.5 rounded-xl font-extrabold">Next</button>
+  </div>
+</section>
+
+<!-- SLIDE 2: How Do Filters Work? -->
+<section class="slide flex-col bg-white rounded-3xl p-6 md:p-10 shadow-soft border-4 border-brand-purplePale" data-title="How Do Filters Work?">
+  <div class="max-w-3xl mx-auto text-center w-full">
+    <span class="inline-block bg-brand-yellowPale text-brand-black font-extrabold text-xs tracking-widest uppercase px-5 py-2 rounded-full">Concept Breakdown</span>
+    <h2 class="text-3xl md:text-4xl font-extrabold mt-3">How Do Filters Work?</h2>
+   
+
+    <div class="grid md:grid-cols-3 gap-5 mt-8 text-left">
+      <div class="p-5 rounded-2xl bg-brand-purpleGhost border-2 border-brand-purplePale">
+        <div class="text-4xl mb-2">🎥</div>
+        <div class="font-extrabold text-lg">1. Camera Feed</div>
+        <p class="text-xs text-gray-600 mt-1">The camera turns on to capture video frames of your face.</p>
+      </div>
+      <div class="p-5 rounded-2xl bg-brand-purpleGhost border-2 border-brand-purplePale">
+        <div class="text-4xl mb-2">🔍</div>
+        <div class="font-extrabold text-lg">2. AI Landmark Detection</div>
+        <p class="text-xs text-gray-600 mt-1">AI calculates positions for eyes, nose, and head top.</p>
+      </div>
+      <div class="p-5 rounded-2xl bg-brand-purpleGhost border-2 border-brand-purplePale">
+        <div class="text-4xl mb-2">😎</div>
+        <div class="font-extrabold text-lg">3. Overlay Asset</div>
+        <p class="text-xs text-gray-600 mt-1">Your code overlays sprites to match the coordinates!</p>
+      </div>
+    </div>
+  </div>
+  <div class="mt-8 flex justify-between border-t border-gray-100 pt-5">
+    <button onclick="prevSlide()" class="nav-prev btn bg-gray-100 text-gray-700 px-6 py-2.5 rounded-xl font-extrabold">Back</button>
+    <button onclick="nextSlide()" class="nav-next btn bg-brand-purple text-white px-8 py-2.5 rounded-xl font-extrabold">Next</button>
+  </div>
+</section>
+
+<!-- SLIDE 3: Meet the Four Parts -->
+<section class="slide flex-col bg-white rounded-3xl p-6 md:p-10 shadow-soft border-4 border-brand-purplePale" data-title="Meet the 4 Parts">
+  <div class="max-w-4xl mx-auto w-full">
+    <div class="text-center mb-6">
+      <span class="inline-block bg-brand-purplePale text-brand-purple font-extrabold text-xs tracking-widest uppercase px-5 py-2 rounded-full">LOGIC</span>
+      <h2 class="text-3xl md:text-4xl font-extrabold mt-2">Meet the Four Parts</h2>
+     
+    </div>
+
+    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="p-5 rounded-2xl bg-brand-purpleGhost border-2 border-brand-purplePale text-center flex flex-col items-center">
+        <div class="text-5xl mb-2">📷</div>
+        <div class="font-extrabold text-lg">1. Stage / Video</div>
+        <p class="text-xs text-gray-600 mt-2">Displays the video camera stream on the screen.</p>
+      </div>
+
+      <div class="p-5 rounded-2xl bg-brand-purpleGhost border-2 border-brand-purplePale text-center flex flex-col items-center">
+        <div class="text-5xl mb-2">🔍</div>
+        <div class="font-extrabold text-lg">2. AI Face Detector</div>
+        <p class="text-xs text-gray-600 mt-2">Scans each frame to discover human face positions.</p>
+      </div>
+
+      <div class="p-5 rounded-2xl bg-brand-purpleGhost border-2 border-brand-purplePale text-center flex flex-col items-center">
+        <div class="text-5xl mb-2">📍</div>
+        <div class="font-extrabold text-lg">3. Position Logic</div>
+        <p class="text-xs text-gray-600 mt-2">Calculates X and Y coordinates for features like eyes</p>
+      </div>
+
+      <div class="p-5 rounded-2xl bg-brand-purpleGhost border-2 border-brand-purplePale text-center flex flex-col items-center">
+        <div class="text-5xl mb-2">🕶️👑</div>
+        <div class="font-extrabold text-lg">4. Filter Sprite</div>
+        <p class="text-xs text-gray-600 mt-2">The sprite attaches to your face.</p>
+      </div>
+    </div>
+  </div>
+  <div class="mt-8 flex justify-between border-t border-gray-100 pt-5">
+    <button onclick="prevSlide()" class="nav-prev btn bg-gray-100 text-gray-700 px-6 py-2.5 rounded-xl font-extrabold">Back</button>
+    <button onclick="nextSlide()" class="nav-next btn bg-brand-purple text-white px-8 py-2.5 rounded-xl font-extrabold">Next</button>
+  </div>
+</section>
+
+<!-- SLIDE 4: How Does Face Detection Help? -->
+<section class="slide flex-col bg-white rounded-3xl p-6 md:p-10 shadow-soft border-4 border-brand-purplePale" data-title="Face Detection Demo">
+  <div class="grid lg:grid-cols-2 gap-8 items-center">
+    <div>
+      <span class="inline-block bg-brand-purplePale text-brand-purple font-extrabold text-xs tracking-widest uppercase px-5 py-2 rounded-full">Interactive Simulation</span>
+      <h2 class="text-3xl md:text-4xl font-extrabold mt-3">How Does Face Detection Help?</h2>
+      <p class="text-gray-600 mt-3 text-sm md:text-base">Click the buttons below</p>
+
+      <div class="flex flex-col gap-3 mt-6">
+        <button onclick="setFaceDetectionState(true)" class="btn text-left p-4 rounded-2xl border-2 border-green-300 bg-green-50 hover:bg-green-100 flex items-center gap-3">
+          <div class="text-3xl">✅</div>
+          <div>
+            <div class="font-extrabold text-green-900 text-base">Face Detected</div>
+            <div class="text-xs text-green-700 mt-0.5">AI tells code: "Face found at (X, Y)!" → Sprites attached!</div>
+          </div>
+        </button>
+
+        <button onclick="setFaceDetectionState(false)" class="btn text-left p-4 rounded-2xl border-2 border-red-300 bg-red-50 hover:bg-red-100 flex items-center gap-3">
+          <div class="text-3xl">🚫</div>
+          <div>
+            <div class="font-extrabold text-red-900 text-base">No Face Detected</div>
+            <div class="text-xs text-red-700 mt-0.5">AI tells code: "No face seen!" and hide the sprite until face appears.</div>
+          </div>
+        </button>
+      </div>
+
+     
+    </div>
+
+    <div class="flex justify-center">
+      <div class="stage">
+        <div id="smileyStageContent" class="relative inline-block text-center transition-all duration-300">
+          <div id="detectCrown" class="absolute -top-16 left-1/2 -translate-x-1/2 text-6xl transition-all duration-300">👑</div>
+          <div class="emoji-face">😊</div>
+          <div id="detectGlasses" class="absolute top-[32px] left-1/2 -translate-x-1/2 text-6xl transition-all duration-300">🕶️</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="mt-8 flex justify-between border-t border-gray-100 pt-5">
+    <button onclick="prevSlide()" class="nav-prev btn bg-gray-100 text-gray-700 px-6 py-2.5 rounded-xl font-extrabold">Back</button>
+    <button onclick="nextSlide()" class="nav-next btn bg-brand-purple text-white px-8 py-2.5 rounded-xl font-extrabold">Next</button>
+  </div>
+</section>
+
+<!-- SLIDE 5: Choose Your Filter -->
+<section class="slide flex-col bg-white rounded-3xl p-6 md:p-10 shadow-soft border-4 border-brand-purplePale" data-title="Choose Your Filter">
+  <div class="grid lg:grid-cols-2 gap-8 items-center">
+    <div>
+      <span class="inline-block bg-brand-purplePale text-brand-purple font-extrabold text-xs tracking-widest uppercase px-5 py-2 rounded-full">Filter Demo</span>
+      <h2 class="text-3xl md:text-4xl font-extrabold mt-3">Choose Your Filter!</h2>
+     
+      <div class="grid grid-cols-2 gap-4 mt-6">
+        <button onclick="selectFilterChoice('glasses')" id="btnFilterGlasses" class="btn p-5 rounded-2xl border-4 border-brand-purple bg-brand-purpleGhost text-center">
+          <div class="text-4xl mb-1">🕶️</div>
+          <div class="font-extrabold text-base text-brand-purple">Sunglasses</div>
+          <div class="text-xs text-gray-500 mt-1">Position: Eye Level (X, Y)</div>
+        </button>
+
+        <button onclick="selectFilterChoice('crown')" id="btnFilterCrown" class="btn p-5 rounded-2xl border-4 border-gray-200 bg-gray-50 text-center">
+          <div class="text-4xl mb-6">👑</div>
+          <div class="font-extrabold text-base text-gray-700">Crown</div>
+          <div class="text-xs text-gray-500 mt-1">Position: Head Top (X, Y)</div>
+        </button>
+      </div>
+
+      <div id="filterInfoBox" class="mt-5 p-4 rounded-2xl bg-brand-purpleGhost border border-brand-purplePale text-xs md:text-sm font-semibold text-brand-purple">
+        🎯 <strong>Sunglasses Overlay:</strong> Positioned  at the <strong>Eye X & Y coordinates</strong>.
+      </div>
+    </div>
+
+    <div class="flex justify-center">
+      <div class="stage">
+        <div class="relative inline-block text-center">
+          <div id="activeCrown" class="absolute -top-16 left-1/2 -translate-x-1/2 text-6xl transition-all duration-300 hidden">👑</div>
+          <div class="emoji-face">😊</div>
+          <div id="activeGlasses" class="absolute top-[32px] left-1/2 -translate-x-1/2 text-6xl transition-all duration-300">🕶️</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="mt-8 flex justify-between border-t border-gray-100 pt-5">
+    <button onclick="prevSlide()" class="nav-prev btn bg-gray-100 text-gray-700 px-6 py-2.5 rounded-xl font-extrabold">Back</button>
+    <button onclick="nextSlide()" class="nav-next btn bg-brand-purple text-white px-8 py-2.5 rounded-xl font-extrabold">Next</button>
+  </div>
+</section>
+
+<!-- SLIDE 6: Knowledge Check -->
+<section class="slide flex-col bg-white rounded-3xl p-6 md:p-10 shadow-soft border-4 border-brand-purplePale" data-title="Knowledge Check">
+  <div class="max-w-3xl mx-auto w-full text-center">
+    <span class="inline-block bg-brand-yellowPale text-brand-black font-extrabold text-xs tracking-widest uppercase px-5 py-2 rounded-full">Knowledge Check</span>
+    <h2 class="text-2xl md:text-4xl font-extrabold mt-3">When the camera sees a face and wants to add eye protection, which overlay should appear?</h2>
+
+    <div class="grid md:grid-cols-2 gap-6 mt-8">
+      <!-- Option 1: Smiley with Glasses -->
+      <button onclick="checkQuiz1(this, true)" class="quiz-option btn p-6 rounded-3xl border-4 border-gray-200 bg-gray-50 flex flex-col items-center justify-center">
+        <div class="relative inline-block my-4">
+          <div class="emoji-face !text-8xl">😊</div>
+          <div class="absolute top-[20px] left-1/2 -translate-x-1/2 text-4xl">🕶️️</div>
+        </div>
+        <div class="font-extrabold text-lg text-brand-purple mt-2">Sunglasses</div>
+      </button>
+
+      <!-- Option 2: Plain Smiley -->
+      <button onclick="checkQuiz1(this, false)" class="quiz-option btn p-6 rounded-3xl border-4 border-gray-200 bg-gray-50 flex flex-col items-center justify-center">
+        <div class="relative inline-block my-4">
+          <div class="emoji-face !text-8xl">😊</div>
+        </div>
+        <div class="font-extrabold text-lg text-gray-700 mt-2">No Filter</div>
+      </button>
+    </div>
+
+    <div id="quiz1Feedback" class="mt-6 text-center font-extrabold text-base min-h-[28px]"></div>
+  </div>
+  <div class="mt-8 flex justify-between border-t border-gray-100 pt-5">
+    <button onclick="prevSlide()" class="nav-prev btn bg-gray-100 text-gray-700 px-6 py-2.5 rounded-xl font-extrabold">Back</button>
+    <button onclick="nextSlide()" class="nav-next btn bg-brand-purple text-white px-8 py-2.5 rounded-xl font-extrabold">Next</button>
+  </div>
+</section>
+
+<!-- SLIDE 7: Identify the Different Blocks -->
+<section class="slide flex-col bg-white rounded-3xl p-6 md:p-10 shadow-soft border-4 border-brand-purplePale" data-title="PictoBlox Blocks">
+  <div class="max-w-4xl mx-auto w-full">
+    <div class="text-center mb-6">
+      <span class="inline-block bg-brand-purplePale text-brand-purple font-extrabold text-xs tracking-widest uppercase px-5 py-2 rounded-full">PictoBlox Extension Blocks</span>
+      <h2 class="text-2xl md:text-4xl font-extrabold mt-2">Let's Learn the Face Detection Blocks</h2>
+    
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-4">
+      <!-- Block a: Turn video on with 0% transparency -->
+      <div onclick="explainBlock('a')" class="p-4 rounded-2xl bg-gray-50 border-2 border-gray-200 hover:border-brand-purple cursor-pointer transition-all">
+        <div class="picto-block red-block w-full justify-center">
+          turn video <span class="bg-white/20 px-2 py-0.5 rounded text-white font-black">on</span> with <span class="bg-white/20 px-2 py-0.5 rounded text-white font-black">0</span> % transparency
+        </div>
+        <div id="exp-a" class="mt-3 text-xs text-gray-600 bg-white p-3 rounded-xl border border-gray-100">
+          <strong></strong> Turns on camera feed on the stage and sets video opacity to 100% visible (0% transparent).
+        </div>
+      </div>
+
+      <!-- Block b: Analyze image from camera -->
+      <div onclick="explainBlock('b')" class="p-4 rounded-2xl bg-gray-50 border-2 border-gray-200 hover:border-brand-purple cursor-pointer transition-all">
+        <div class="picto-block red-block w-full justify-center">
+          analyze image from <span class="bg-white/20 px-2 py-0.5 rounded text-white font-black">camera</span>
+        </div>
+        <div id="exp-b" class="mt-3 text-xs text-gray-600 bg-white p-3 rounded-xl border border-gray-100">
+         <strong></strong> Scans the current frame from your camera to detects facial coordinates.
+        </div>
+      </div>
+
+      <!-- Block c: Get [x position] of [left eye] on face 1 (With Drop-downs) -->
+      <div class="p-4 rounded-2xl bg-gray-50 border-2 border-gray-200">
+        <div class="picto-block red-block w-full justify-center flex-wrap gap-1">
+          get 
+          <select id="dropCoord" onchange="updateBlockCExplanation()">
+            <option value="x position">x position</option>
+            <option value="y position">y position</option>
+          </select>
+          of
+          <select id="dropFeature" onchange="updateBlockCExplanation()">
+            <option value="left eye">left eye</option>
+            <option value="right eye">right eye</option>
+            <option value="nose">nose</option>
+            <option value="mouth">mouth</option>
+          </select>
+          on face 1
+        </div>
+        <div id="exp-c" class="mt-3 text-xs text-brand-purple bg-brand-purpleGhost p-3 rounded-xl border border-brand-purplePale font-bold">
+           Retrieves the <strong>x position</strong> coordinate of the <strong>left eye</strong> on Face 1.
+        </div>
+      </div>
+
+      <!-- Block d: Get [width] of face 1 (With Drop-down) -->
+      <div class="p-4 rounded-2xl bg-gray-50 border-2 border-gray-200">
+        <div class="picto-block red-block w-full justify-center flex-wrap gap-1">
+          get
+          <select id="dropDim" onchange="updateBlockDExplanation()">
+            <option value="width">width</option>
+            <option value="height">height</option>
+            <option value="x position">x position</option>
+            <option value="y position">y position</option>
+          </select>
+          of face 1
+        </div>
+        <div id="exp-d" class="mt-3 text-xs text-brand-purple bg-brand-purpleGhost p-3 rounded-xl border border-brand-purplePale font-bold">
+          Retrieves the <strong>width</strong> dimension of the detected Face 1 bounding box.
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="mt-8 flex justify-between border-t border-gray-100 pt-5">
+    <button onclick="prevSlide()" class="nav-prev btn bg-gray-100 text-gray-700 px-6 py-2.5 rounded-xl font-extrabold">Back</button>
+    <button onclick="nextSlide()" class="nav-next btn bg-brand-purple text-white px-8 py-2.5 rounded-xl font-extrabold">Next</button>
+  </div>
+</section>
+
+<!-- SLIDE 8: Create Your Loop -->
+<section class="slide flex-col bg-white rounded-3xl p-6 md:p-10 shadow-soft border-4 border-brand-purplePale" data-title="Create Your Loop">
+  <div class="max-w-3xl mx-auto w-full">
+    <div class="text-center mb-6">
+      <span class="inline-block bg-brand-purplePale text-brand-purple font-extrabold text-xs tracking-widest uppercase px-5 py-2 rounded-full">PictoBlox Code Script</span>
+      <h2 class="text-2xl md:text-4xl font-extrabold mt-2">Create Face Detection Code</h2>
+     
+    </div>
+
+    <!-- Scratch / PictoBlox Script Box -->
+    <div class="p-6 rounded-3xl bg-slate-900 text-white font-mono shadow-2xl border-4 border-slate-700 max-w-xl mx-auto space-y-2 text-xs md:text-sm">
+      <!-- Outside Loop -->
+      <div class="text-xs text-slate-400 font-sans font-bold">// 1. Initialize stage & camera outside the loop</div>
+      <div class="picto-block event-block w-full">when 🚩 clicked</div>
+      <div class="picto-block red-block w-full">turn video on with 0 % transparency</div>
+      
+      <!-- Inside Loop -->
+      <div class="text-xs text-slate-400 font-sans font-bold pt-3">// 2. Continuously analyze and check face condition inside forever loop</div>
+      <div class="p-3 bg-slate-800 rounded-2xl border-l-8 border-brand-yellow space-y-2">
+        <div class="picto-block control-block w-full">forever</div>
+        <div class="pl-4 space-y-2 border-l-2 border-slate-600">
+          <div class="picto-block red-block w-full">analyze image from camera</div>
+          <div class="picto-block control-block w-full">if &lt;is face detected?&gt; then</div>
+          <div class="pl-4">
+            <div class="picto-block looks-block w-full">say [ Face Detected! ]</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    
+  <div class="mt-8 flex justify-between border-t border-gray-100 pt-5">
+    <button onclick="prevSlide()" class="nav-prev btn bg-gray-100 text-gray-700 px-6 py-2.5 rounded-xl font-extrabold">Back</button>
+    <button onclick="nextSlide()" class="nav-next btn bg-brand-purple text-white px-8 py-2.5 rounded-xl font-extrabold">Next</button>
+  </div>
+</section>
+
+<!-- SLIDE 9: Let's Apply Our Face Filters -->
+<section class="slide flex-col bg-white rounded-3xl p-6 md:p-10 shadow-soft border-4 border-brand-purplePale" data-title="Apply Filters">
+  <div class="max-w-3xl mx-auto w-full text-center">
+    <span class="inline-block bg-brand-purplePale text-brand-purple font-extrabold text-xs tracking-widest uppercase px-5 py-2 rounded-full">Final Project Setup</span>
+    <h2 class="text-3xl md:text-5xl font-extrabold mt-3">Let's Apply Our Face Filters!</h2>
+    <p class="text-gray-600 mt-3 text-base md:text-lg">What type of creative face filter are you going to build in PictoBlox today?</p>
+
+    <!-- Student Input Box -->
+    <div class="mt-6 max-w-md mx-auto text-left">
+      <label class="block text-xs font-extrabold text-gray-700 uppercase tracking-wider mb-2">Your Filter Idea:</label>
+      <input type="text" id="studentFilterIdea" placeholder="Type here..." class="w-full px-5 py-4 rounded-2xl border-2 border-brand-purplePale focus:border-brand-purple outline-none font-extrabold text-gray-800 shadow-sm transition-all" />
+    </div>
+
+    <div class="mt-8 flex justify-center">
+      <button onclick="launchPictoBlox()" class="btn inline-flex items-center gap-3 bg-brand-yellow hover:bg-brand-yellowDark text-brand-black font-black text-xl px-10 py-5 rounded-3xl shadow-xl border-4 border-brand-yellowDark/30">
+        <span>🚀 Start Coding in PictoBlox</span>
+      </button>
+    </div>
+    
+    <div id="launchMsg" class="mt-4 font-extrabold text-sm text-brand-purple min-h-[20px]"></div>
+  </div>
+  <div class="mt-8 flex justify-between border-t border-gray-100 pt-5">
+    <button onclick="prevSlide()" class="nav-prev btn bg-gray-100 text-gray-700 px-6 py-2.5 rounded-xl font-extrabold">Back</button>
+    <button onclick="nextSlide()" class="nav-next btn bg-brand-purple text-white px-8 py-2.5 rounded-xl font-extrabold">Next</button>
+  </div>
+</section>
+
+<!-- SLIDE 10: Wrap-Up Quiz Q1 -->
+<section class="slide flex-col bg-white rounded-3xl p-6 md:p-10 shadow-soft border-4 border-brand-purplePale" data-title="Wrap-Up Quiz Q1">
+  <div class="max-w-2xl mx-auto w-full">
+    <div class="text-center mb-6">
+      <span class="inline-block bg-brand-yellowPale text-brand-black font-extrabold text-xs tracking-widest uppercase px-5 py-2 rounded-full">Wrap-Up Quiz • Question 1</span>
+      <h2 class="text-2xl md:text-3xl font-extrabold mt-2">Which red PictoBlox block is used to scan the current frame for faces?</h2>
+    </div>
+
+    <div class="grid gap-4">
+      <button onclick="checkWrapQuiz1(this, false)" class="quiz-option btn p-4 rounded-2xl border-4 border-gray-200 bg-gray-50 flex items-center justify-start">
+        <div class="picto-block red-block">turn video on with 0 % transparency</div>
+      </button>
+      
+      <button onclick="checkWrapQuiz1(this, true)" class="quiz-option btn p-4 rounded-2xl border-4 border-gray-200 bg-gray-50 flex items-center justify-start">
+        <div class="picto-block red-block">analyze image from camera</div>
+      </button>
+
+      <button onclick="checkWrapQuiz1(this, false)" class="quiz-option btn p-4 rounded-2xl border-4 border-gray-200 bg-gray-50 flex items-center justify-start">
+        <div class="picto-block red-block">get width of face 1</div>
+      </button>
+    </div>
+
+    <div id="wrap1Feedback" class="mt-5 text-center font-extrabold text-sm min-h-[24px]"></div>
+  </div>
+  <div class="mt-8 flex justify-between border-t border-gray-100 pt-5">
+    <button onclick="prevSlide()" class="nav-prev btn bg-gray-100 text-gray-700 px-6 py-2.5 rounded-xl font-extrabold">Back</button>
+    <button onclick="nextSlide()" class="nav-next btn bg-brand-purple text-white px-8 py-2.5 rounded-xl font-extrabold">Next</button>
+  </div>
+</section>
+
+<!-- SLIDE 11: Wrap-Up Quiz Q2 -->
+<section class="slide flex-col bg-white rounded-3xl p-6 md:p-10 shadow-soft border-4 border-brand-purplePale" data-title="Wrap-Up Quiz Q2">
+  <div class="max-w-2xl mx-auto w-full">
+    <div class="text-center mb-6">
+      <span class="inline-block bg-brand-yellowPale text-brand-black font-extrabold text-xs tracking-widest uppercase px-5 py-2 rounded-full">Wrap-Up Quiz • Question 2</span>
+      <h2 class="text-2xl md:text-3xl font-extrabold mt-2">Which red PictoBlox block gives you the eye landmark position to attach sunglasses?</h2>
+    </div>
+
+    <div class="grid gap-4">
+      <button onclick="checkWrapQuiz2(this, true)" class="quiz-option btn p-4 rounded-2xl border-4 border-gray-200 bg-gray-50 flex items-center justify-start">
+        <div class="picto-block red-block">get x position of left eye on face 1</div>
+      </button>
+
+      <button onclick="checkWrapQuiz2(this, false)" class="quiz-option btn p-4 rounded-2xl border-4 border-gray-200 bg-gray-50 flex items-center justify-start">
+        <div class="picto-block red-block">turn video on with 0 % transparency</div>
+      </button>
+
+      <button onclick="checkWrapQuiz2(this, false)" class="quiz-option btn p-4 rounded-2xl border-4 border-gray-200 bg-gray-50 flex items-center justify-start">
+        <div class="picto-block red-block">analyze image from camera</div>
+      </button>
+    </div>
+
+    <div id="wrap2Feedback" class="mt-5 text-center font-extrabold text-sm min-h-[24px]"></div>
+  </div>
+  <div class="mt-8 flex justify-between border-t border-gray-100 pt-5">
+    <button onclick="prevSlide()" class="nav-prev btn bg-gray-100 text-gray-700 px-6 py-2.5 rounded-xl font-extrabold">Back</button>
+    <button onclick="go(0)" class="nav-next btn bg-brand-yellow text-brand-black px-8 py-2.5 rounded-xl font-extrabold">Restart Lesson 🔄</button>
+  </div>
+</section>
+
+</div>
+</main>
+
+<script>
+let currentSlide = 0;
+const slides = document.querySelectorAll('.slide');
+const slideSelect = document.getElementById('slideSelect');
+const counter = document.getElementById('counter');
+const progress = document.getElementById('progress');
+
+// Populate navigation dropdown
+slides.forEach((slide, idx) => {
+  const opt = document.createElement('option');
+  opt.value = idx;
+  opt.textContent = `${idx + 1}. ${slide.dataset.title || 'Slide ' + (idx + 1)}`;
+  slideSelect.appendChild(opt);
+});
+
+function updateUI() {
+  slides.forEach((slide, idx) => {
+    slide.classList.toggle('active', idx === currentSlide);
+    
+    // Manage disabled state of standard Back / Next buttons on every slide
+    const prevBtn = slide.querySelector('.nav-prev');
+    const nextBtn = slide.querySelector('.nav-next');
+
+    if (prevBtn) prevBtn.disabled = (currentSlide === 0);
+    if (nextBtn && idx !== slides.length - 1) nextBtn.disabled = false;
+  });
+
+  slideSelect.value = currentSlide;
+  counter.textContent = `${currentSlide + 1} / ${slides.length}`;
+  progress.style.width = `${((currentSlide + 1) / slides.length) * 100}%`;
+}
+
+function go(index) {
+  currentSlide = index;
+  updateUI();
+}
+
+function nextSlide() {
+  if (currentSlide < slides.length - 1) {
+    currentSlide++;
+    updateUI();
+  }
+}
+
+function prevSlide() {
+  if (currentSlide > 0) {
+    currentSlide--;
+    updateUI();
+  }
+}
+
+// Slide 1: Home Page Overlay Toggle
+function toggleHomeOverlay(type) {
+  if (type === 'glasses') {
+    const el = document.getElementById('homeGlasses');
+    el.classList.toggle('opacity-0');
+  } else if (type === 'crown') {
+    const el = document.getElementById('homeCrown');
+    el.classList.toggle('opacity-0');
+  }
+}
+
+// Slide 4: Face Detection Toggle
+function setFaceDetectionState(detected) {
+  const glasses = document.getElementById('detectGlasses');
+  const crown = document.getElementById('detectCrown');
+  const msg = document.getElementById('detectionMsg');
+
+  if (detected) {
+    glasses.style.opacity = '1';
+    crown.style.opacity = '1';
+    msg.innerHTML = "✅ <strong>Status: Face Detected!</strong> AI found coordinates → Overlays attached to face!";
+    msg.className = "mt-4 p-4 rounded-2xl bg-green-100 border border-green-300 text-xs md:text-sm font-bold text-green-900";
+  } else {
+    glasses.style.opacity = '0';
+    crown.style.opacity = '0';
+    msg.innerHTML = "🚫 <strong>Status: No Face Detected!</strong> AI cannot find a face → Filter overlays remain hidden.";
+    msg.className = "mt-4 p-4 rounded-2xl bg-red-100 border border-red-300 text-xs md:text-sm font-bold text-red-900";
+  }
+}
+
+// Slide 5: Choose Filter Option
+function selectFilterChoice(type) {
+  const glasses = document.getElementById('activeGlasses');
+  const crown = document.getElementById('activeCrown');
+  const btnG = document.getElementById('btnFilterGlasses');
+  const btnC = document.getElementById('btnFilterCrown');
+  const info = document.getElementById('filterInfoBox');
+
+  if (type === 'glasses') {
+    glasses.classList.remove('hidden');
+    crown.classList.add('hidden');
+
+    btnG.className = "btn p-5 rounded-2xl border-4 border-brand-purple bg-brand-purpleGhost text-center";
+    btnC.className = "btn p-5 rounded-2xl border-4 border-gray-200 bg-gray-50 text-center";
+
+    info.innerHTML = "🎯 <strong>Sunglasses Overlay:</strong> Positioned dynamically at the <strong>Eye X & Y coordinates</strong>.";
+  } else {
+    crown.classList.remove('hidden');
+    glasses.classList.add('hidden');
+
+    btnC.className = "btn p-5 rounded-2xl border-4 border-brand-purple bg-brand-purpleGhost text-center";
+    btnG.className = "btn p-5 rounded-2xl border-4 border-gray-200 bg-gray-50 text-center";
+
+    info.innerHTML = "👑 <strong>Crown Overlay:</strong> Positioned dynamically above the <strong>Head Top X & Y coordinates</strong>.";
+  }
+}
+
+// Slide 6: Knowledge Check
+function checkQuiz1(btn, isCorrect) {
+  const feedback = document.getElementById('quiz1Feedback');
+  if (isCorrect) {
+    btn.classList.add('correct');
+    feedback.textContent = "🎉 Correct! The smiley with sunglasses overlay is selected when face eye-protection filter is active!";
+    feedback.className = "mt-6 text-center font-extrabold text-base text-green-600";
+    triggerConfetti();
+  } else {
+    btn.classList.add('wrong');
+    feedback.textContent = "❌ Try again! We want to select the smiley wearing glasses filter!";
+    feedback.className = "mt-6 text-center font-extrabold text-base text-red-600";
+  }
+}
+
+// Slide 7: Block Explanations & Dropdowns
+function explainBlock(id) {
+  if (id === 'a') {
+    alert("Turn Video On: Turns on camera feed on stage and sets opacity to 100% visible (0% transparent).");
+  } else if (id === 'b') {
+    alert("Analyze Image from Camera: Takes a video frame and runs face landmark detection AI.");
+  }
+}
+
+function updateBlockCExplanation() {
+  const coord = document.getElementById('dropCoord').value;
+  const feat = document.getElementById('dropFeature').value;
+  document.getElementById('exp-c').innerHTML = `🎯 Retrieves the <strong>${coord}</strong> coordinate of the <strong>${feat}</strong> on Face 1.`;
+}
+
+function updateBlockDExplanation() {
+  const dim = document.getElementById('dropDim').value;
+  document.getElementById('exp-d').innerHTML = `📏 Retrieves the <strong>${dim}</strong> dimension of the detected Face 1 bounding box.`;
+}
+
+// Slide 8: Test Run Script
+function testLoopRun() {
+  const fb = document.getElementById('loopFeedback');
+  fb.textContent = "⚡ Running Script... Video On 📷 → Analyzing Frame 🔍 → Face Found! Saying 'Face Detected!' 🎉";
+  triggerConfetti();
+}
+
+// Slide 9: Launch PictoBlox
+function launchPictoBlox() {
+  const idea = document.getElementById('studentFilterIdea').value || "Face Filter";
+  const msg = document.getElementById('launchMsg');
+  msg.textContent = `🚀 Launching PictoBlox for project: "${idea}"!`;
+  setTimeout(() => {
+    window.open("https://pictoblox.ai", "_blank");
+  }, 800);
+}
+
+// Slide 10: Wrap Quiz 1
+function checkWrapQuiz1(btn, isCorrect) {
+  const fb = document.getElementById('wrap1Feedback');
+  if (isCorrect) {
+    btn.classList.add('correct');
+    fb.textContent = "🎉 Correct! 'analyze image from camera' scans frames for face detection!";
+    fb.className = "mt-5 text-center font-extrabold text-sm text-green-600";
+    triggerConfetti();
+  } else {
+    btn.classList.add('wrong');
+    fb.textContent = "❌ Not quite! Remember, 'analyze image from camera' scans the camera frame!";
+    fb.className = "mt-5 text-center font-extrabold text-sm text-red-600";
+  }
+}
+
+// Slide 11: Wrap Quiz 2
+function checkWrapQuiz2(btn, isCorrect) {
+  const fb = document.getElementById('wrap2Feedback');
+  if (isCorrect) {
+    btn.classList.add('correct');
+    fb.textContent = "🎉 Correct! 'get x position of left eye on face 1' returns coordinate positions for filters!";
+    fb.className = "mt-5 text-center font-extrabold text-sm text-green-600";
+    triggerConfetti();
+  } else {
+    btn.classList.add('wrong');
+    fb.textContent = "❌ Try again! 'get x position of left eye' retrieves feature positions!";
+    fb.className = "mt-5 text-center font-extrabold text-sm text-red-600";
+  }
+}
+
+// Confetti Effect
+function triggerConfetti() {
+  const container = document.createElement('div');
+  container.className = 'confetti';
+  const colors = ['#5E48C4', '#FFD071', '#59E4FB', '#22C55E', '#EF4444'];
+  for (let i = 0; i < 30; i++) {
+    const p = document.createElement('i');
+    p.style.left = Math.random() * 100 + 'vw';
+    p.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+    p.style.animationDelay = Math.random() * 0.4 + 's';
+    container.appendChild(p);
+  }
+  document.body.appendChild(container);
+  setTimeout(() => container.remove(), 2400);
+}
+
+// Initialize
+updateUI();
+</script>
+</body>
+</html>
